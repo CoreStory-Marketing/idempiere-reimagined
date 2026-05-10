@@ -7,7 +7,7 @@ This is a 40%-built Spring Boot reimagining of iDempiere's logistics domain. **T
 - **Legacy:** iDempiere — CoreStory project ID **457** (`Product-Marketing-Lab` org).
   Query via `mcp__corestoryProduct-Marketing-Lab__send_message` with `project_id=457`.
   **DO NOT trust the static PRD/tech-spec for legacy** — use `send_message` only. The static artifacts have known accuracy gaps (see `idempiere-corestory-audit.md`).
-- **Target:** This repo — CoreStory project ID **{TBD — fill in after ingestion completes; see `docs/design-spec.md`}** (also `Product-Marketing-Lab` org). Query via the same MCP tool with the target `project_id`.
+- **Target:** This repo — CoreStory project ID **458** (also `Product-Marketing-Lab` org). Query via the same MCP tool with `project_id=458`.
 
 ## Forbidden actions
 
@@ -99,6 +99,6 @@ idempiere-reimagined/
 | Live conversation API | Healthy. ~80–110s per round-trip. Self-flags `[unverified]` conservatively. |
 | Verified dry-run conversation | 5276 — Demo Dry-Run for Shipping Notification Flow |
 | Static PRD/tech-spec | **DO NOT SURFACE.** Use `send_message` only for legacy. |
-| Target project ID | TBD after ingestion (Day 2 in the build sequence) |
+| Target project ID | 458 |
 
 For more detail see `docs/design-spec.md` (the iDempiere parity table and the `[unverified]` items to verify on-the-fly during the recorded demo).

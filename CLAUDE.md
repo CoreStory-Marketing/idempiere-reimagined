@@ -27,7 +27,7 @@ Loaded automatically from `.claude/skills/`:
 ## Two intelligence stores
 
 - **Legacy:** CoreStory project **457** (iDempiere) — `mcp__corestoryProduct-Marketing-Lab__send_message`. **Use `send_message` only**, not the static PRD/tech-spec.
-- **Target:** This repo — CoreStory project ID published in `AGENTS.md` once ingestion completes.
+- **Target:** This repo — CoreStory project **458** (`Product-Marketing-Lab` org). Same MCP tool. See `AGENTS.md` for full operational facts.
 
 ## Hard constraints
 
