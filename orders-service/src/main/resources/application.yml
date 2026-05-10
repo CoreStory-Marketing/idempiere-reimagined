@@ -1,0 +1,67 @@
+spring:
+  application:
+    name: orders-service
+  datasource:
+    url: jdbc:postgresql://localhost:5441/orders
+    username: orders
+    password: orders
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 5000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+      hibernate.default_schema: public
+    open-in-view: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  artemis:
+    mode: native
+    broker-url: tcp://localhost:61616
+    user: admin
+    password: admin
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+server:
+  port: 8081
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+idempiere:
+  events:
+    orders-topic: orders.events
+  state-machine:
+    transitions:
+      - from: DRAFT
+        to: CONFIRMED
+      - from: CONFIRMED
+        to: SHIPPED
+      - from: SHIPPED
+        to: INVOICED
+      - from: INVOICED
+        to: COMPLETE
+      - from: DRAFT
+        to: CANCELLED
+      - from: CONFIRMED
+        to: CANCELLED
+
+logging:
+  level:
+    root: INFO
+    com.corestory.idempiere: DEBUG
+    org.hibernate.SQL: WARN

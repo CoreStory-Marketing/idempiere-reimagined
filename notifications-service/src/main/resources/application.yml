@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: notifications-service
+  datasource:
+    url: jdbc:postgresql://localhost:5445/notifications
+    username: notifications
+    password: notifications
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+    open-in-view: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  artemis:
+    mode: native
+    broker-url: tcp://localhost:61616
+    user: admin
+    password: admin
+  mail:
+    host: localhost
+    port: 1025
+    properties:
+      mail:
+        smtp:
+          starttls:
+            enable: false
+          auth: false
+
+server:
+  port: 8085
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+idempiere:
+  events:
+    shipments-topic: shipments.events
+    orders-topic: orders.events
+    notifications-topic: notifications.events
+  email:
+    from: no-reply@idempiere-reimagined.local
+    default-language: en
+
+logging:
+  level:
+    root: INFO
+    com.corestory.idempiere: DEBUG

@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: inventory-service
+  datasource:
+    url: jdbc:postgresql://localhost:5442/inventory
+    username: inventory
+    password: inventory
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 5000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+    open-in-view: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  artemis:
+    mode: native
+    broker-url: tcp://localhost:61616
+    user: admin
+    password: admin
+
+server:
+  port: 8082
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+idempiere:
+  events:
+    orders-topic: orders.events
+    inventory-topic: inventory.events
+  reservation:
+    ttl-hours: 24
+    expiry-job-cron: "0 */15 * * * *"
+
+logging:
+  level:
+    root: INFO
+    com.corestory.idempiere: DEBUG

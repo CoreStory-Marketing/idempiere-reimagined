@@ -1,0 +1,42 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  artemis:
+    mode: embedded
+    embedded:
+      enabled: true
+      persistent: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+idempiere:
+  events:
+    orders-topic: orders.events.test
+  state-machine:
+    transitions:
+      - from: DRAFT
+        to: CONFIRMED
+      - from: CONFIRMED
+        to: SHIPPED
+      - from: SHIPPED
+        to: INVOICED
+      - from: INVOICED
+        to: COMPLETE
+      - from: DRAFT
+        to: CANCELLED
+      - from: CONFIRMED
+        to: CANCELLED
+
+logging:
+  level:
+    org.testcontainers: INFO
+    com.corestory.idempiere: DEBUG

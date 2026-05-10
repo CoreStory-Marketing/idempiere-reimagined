@@ -1,0 +1,27 @@
+# Maven
+**/target/
+**/*.class
+**/*.jar
+**/*.war
+**/*.ear
+
+# Frontend build artifacts and dependencies
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+frontend/*.tsbuildinfo
+
+# IDE, VCS, OS noise
+.git/
+.idea/
+.vscode/
+**/*.iml
+.DS_Store
+Thumbs.db
+
+# Logs and local caches
+**/*.log
+logs/
+docker-volumes/
+.factory/cache/

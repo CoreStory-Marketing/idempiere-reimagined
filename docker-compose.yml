@@ -1,0 +1,263 @@
+version: "3.9"
+
+# idempiere-reimagined — full Docker compose runtime
+#
+#   Per-service Postgres, Apache Artemis broker, MailHog, and 5 services + gateway + frontend.
+#   Healthchecks gate startup so services don't boot before their DB is ready.
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Postgres — one per service
+  # ---------------------------------------------------------------------------
+
+  orders-db:
+    image: postgres:16-alpine
+    container_name: idempiere-orders-db
+    environment:
+      POSTGRES_DB: orders
+      POSTGRES_USER: orders
+      POSTGRES_PASSWORD: orders
+    ports: ["5441:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orders -d orders"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - orders-db-data:/var/lib/postgresql/data
+
+  inventory-db:
+    image: postgres:16-alpine
+    container_name: idempiere-inventory-db
+    environment:
+      POSTGRES_DB: inventory
+      POSTGRES_USER: inventory
+      POSTGRES_PASSWORD: inventory
+    ports: ["5442:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inventory -d inventory"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - inventory-db-data:/var/lib/postgresql/data
+
+  warehouse-db:
+    image: postgres:16-alpine
+    container_name: idempiere-warehouse-db
+    environment:
+      POSTGRES_DB: warehouse
+      POSTGRES_USER: warehouse
+      POSTGRES_PASSWORD: warehouse
+    ports: ["5443:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U warehouse -d warehouse"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - warehouse-db-data:/var/lib/postgresql/data
+
+  shipping-db:
+    image: postgres:16-alpine
+    container_name: idempiere-shipping-db
+    environment:
+      POSTGRES_DB: shipping
+      POSTGRES_USER: shipping
+      POSTGRES_PASSWORD: shipping
+    ports: ["5444:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shipping -d shipping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - shipping-db-data:/var/lib/postgresql/data
+
+  notifications-db:
+    image: postgres:16-alpine
+    container_name: idempiere-notifications-db
+    environment:
+      POSTGRES_DB: notifications
+      POSTGRES_USER: notifications
+      POSTGRES_PASSWORD: notifications
+    ports: ["5445:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notifications -d notifications"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - notifications-db-data:/var/lib/postgresql/data
+
+  # ---------------------------------------------------------------------------
+  # Apache Artemis (JMS broker)
+  # ---------------------------------------------------------------------------
+
+  artemis:
+    image: apache/activemq-artemis:2.39.0
+    container_name: idempiere-artemis
+    environment:
+      ARTEMIS_USER: admin
+      ARTEMIS_PASSWORD: admin
+      ANONYMOUS_LOGIN: "true"
+    ports:
+      - "61616:61616"   # core protocol
+      - "8161:8161"     # web console
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8161/console || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  # ---------------------------------------------------------------------------
+  # MailHog (test SMTP server)
+  # ---------------------------------------------------------------------------
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: idempiere-mailhog
+    ports:
+      - "1025:1025"     # SMTP
+      - "8025:8025"     # web UI
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8025 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------------------
+  # Services
+  # ---------------------------------------------------------------------------
+
+  orders-service:
+    build:
+      context: .
+      dockerfile: orders-service/Dockerfile
+    container_name: idempiere-orders-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://orders-db:5432/orders
+      SPRING_DATASOURCE_USERNAME: orders
+      SPRING_DATASOURCE_PASSWORD: orders
+      SPRING_ARTEMIS_BROKER_URL: tcp://artemis:61616
+      SPRING_ARTEMIS_USER: admin
+      SPRING_ARTEMIS_PASSWORD: admin
+    ports: ["8081:8081"]
+    depends_on:
+      orders-db: { condition: service_healthy }
+      artemis: { condition: service_healthy }
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: inventory-service/Dockerfile
+    container_name: idempiere-inventory-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://inventory-db:5432/inventory
+      SPRING_DATASOURCE_USERNAME: inventory
+      SPRING_DATASOURCE_PASSWORD: inventory
+      SPRING_ARTEMIS_BROKER_URL: tcp://artemis:61616
+      SPRING_ARTEMIS_USER: admin
+      SPRING_ARTEMIS_PASSWORD: admin
+    ports: ["8082:8082"]
+    depends_on:
+      inventory-db: { condition: service_healthy }
+      artemis: { condition: service_healthy }
+
+  warehouse-service:
+    build:
+      context: .
+      dockerfile: warehouse-service/Dockerfile
+    container_name: idempiere-warehouse-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://warehouse-db:5432/warehouse
+      SPRING_DATASOURCE_USERNAME: warehouse
+      SPRING_DATASOURCE_PASSWORD: warehouse
+      SPRING_ARTEMIS_BROKER_URL: tcp://artemis:61616
+      SPRING_ARTEMIS_USER: admin
+      SPRING_ARTEMIS_PASSWORD: admin
+    ports: ["8083:8083"]
+    depends_on:
+      warehouse-db: { condition: service_healthy }
+      artemis: { condition: service_healthy }
+
+  shipping-service:
+    build:
+      context: .
+      dockerfile: shipping-service/Dockerfile
+    container_name: idempiere-shipping-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://shipping-db:5432/shipping
+      SPRING_DATASOURCE_USERNAME: shipping
+      SPRING_DATASOURCE_PASSWORD: shipping
+      SPRING_ARTEMIS_BROKER_URL: tcp://artemis:61616
+      SPRING_ARTEMIS_USER: admin
+      SPRING_ARTEMIS_PASSWORD: admin
+    ports: ["8084:8084"]
+    depends_on:
+      shipping-db: { condition: service_healthy }
+      artemis: { condition: service_healthy }
+
+  notifications-service:
+    build:
+      context: .
+      dockerfile: notifications-service/Dockerfile
+    container_name: idempiere-notifications-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://notifications-db:5432/notifications
+      SPRING_DATASOURCE_USERNAME: notifications
+      SPRING_DATASOURCE_PASSWORD: notifications
+      SPRING_ARTEMIS_BROKER_URL: tcp://artemis:61616
+      SPRING_ARTEMIS_USER: admin
+      SPRING_ARTEMIS_PASSWORD: admin
+      SPRING_MAIL_HOST: mailhog
+      SPRING_MAIL_PORT: 1025
+    ports: ["8085:8085"]
+    depends_on:
+      notifications-db: { condition: service_healthy }
+      artemis: { condition: service_healthy }
+      mailhog: { condition: service_healthy }
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: idempiere-api-gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      ORDERS_SERVICE_URL: http://orders-service:8081
+      INVENTORY_SERVICE_URL: http://inventory-service:8082
+      WAREHOUSE_SERVICE_URL: http://warehouse-service:8083
+      SHIPPING_SERVICE_URL: http://shipping-service:8084
+      NOTIFICATIONS_SERVICE_URL: http://notifications-service:8085
+    ports: ["8080:8080"]
+    depends_on:
+      - orders-service
+      - inventory-service
+      - warehouse-service
+      - shipping-service
+      - notifications-service
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: idempiere-frontend
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+    ports: ["3000:3000"]
+    depends_on:
+      - api-gateway
+
+volumes:
+  orders-db-data:
+  inventory-db-data:
+  warehouse-db-data:
+  shipping-db-data:
+  notifications-db-data:

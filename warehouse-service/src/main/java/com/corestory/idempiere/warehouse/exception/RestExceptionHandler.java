@@ -1,0 +1,74 @@
+package com.corestory.idempiere.warehouse.exception;
+
+import com.corestory.idempiere.common.dto.ApiError;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.NoSuchElementException;
+
+@Slf4j
+@RestControllerAdvice
+public class RestExceptionHandler {
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiError> handleStatus(ResponseStatusException ex, HttpServletRequest req) {
+        return ResponseEntity.status(ex.getStatusCode()).body(
+            ApiError.of(ex.getStatusCode().toString(), ex.getReason() != null ? ex.getReason() : ex.getMessage(), req.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<ApiError> handleNotFound(NoSuchElementException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+            ApiError.of("NOT_FOUND", ex.getMessage(), req.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleBadArg(IllegalArgumentException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            ApiError.of("BAD_REQUEST", ex.getMessage(), req.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleConflict(IllegalStateException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+            ApiError.of("CONFLICT", ex.getMessage(), req.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleConstraint(DataIntegrityViolationException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+            ApiError.of("DATA_INTEGRITY", "constraint violation", req.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest req) {
+        List<ApiError.Detail> details = ex.getBindingResult().getFieldErrors().stream()
+            .map(fe -> new ApiError.Detail(fe.getField(), fe.getDefaultMessage()))
+            .toList();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            new ApiError("VALIDATION", "request payload failed validation", Instant.now(), req.getRequestURI(), details)
+        );
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> handleAll(Exception ex, HttpServletRequest req) {
+        log.error("unhandled exception", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+            ApiError.of("INTERNAL", "internal server error", req.getRequestURI())
+        );
+    }
+}

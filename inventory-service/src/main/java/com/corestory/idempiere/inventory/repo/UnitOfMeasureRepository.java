@@ -1,0 +1,15 @@
+package com.corestory.idempiere.inventory.repo;
+
+import com.corestory.idempiere.inventory.model.UnitOfMeasure;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface UnitOfMeasureRepository extends JpaRepository<UnitOfMeasure, Long> {
+
+    Optional<UnitOfMeasure> findByCode(String code);
+
+    Optional<UnitOfMeasure> findByIsDefaultTrue();
+}
