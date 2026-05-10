@@ -5,7 +5,7 @@ description: Implement features in a partially-built modern target system using 
 
 # Skill — `brownfield-feature-implementation`
 
-End-to-end JIRA → working code workflow against a 40%-built modern target with a legacy reference. Calls into `dual-store-gap-analysis` for the fact-gathering phase, then enforces a human-in-the-loop gate before generating any implementation code.
+End-to-end JIRA → working code workflow against a partially-built modern target with a legacy reference. Calls into `dual-store-gap-analysis` for the fact-gathering phase, then enforces a human-in-the-loop gate before generating any implementation code.
 
 ## When to use
 

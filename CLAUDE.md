@@ -12,7 +12,7 @@
 
 Loaded automatically from `.claude/skills/`:
 
-- **`brownfield-feature-implementation`** — invoke for JIRA-style ticket implementation against this 40%-built target. Triggers: "implement SHIP-101", "build this feature in the new system", JIRA-ID format.
+- **`brownfield-feature-implementation`** — invoke for JIRA-style ticket implementation against this partially-built target. Triggers: "implement SHIP-101", "build this feature in the new system", JIRA-ID format.
 - **`dual-store-gap-analysis`** — invoke for standalone gap analysis across legacy (CoreStory 457) and target. Triggers: "dual-store gap analysis", "compare legacy and target for {feature}".
 
 ## Six guardrails (enforceable)

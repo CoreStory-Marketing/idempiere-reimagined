@@ -2,7 +2,7 @@
 
 > Universal cross-harness instruction file per the [agents.md spec](https://agents.md). Read by Codex, Aider, Cursor, Factory.ai, Jules, Gemini CLI, Windsurf, GitHub Copilot's coding agent, JetBrains Junie, Warp.
 
-This is a 40%-built Spring Boot reimagining of iDempiere's logistics domain. **Two intelligence stores back this repo:**
+This is a partially-built Spring Boot reimagining of iDempiere's logistics domain — orders and inventory are full implementations, warehouse is half-built (receiving works, picking stubbed), shipping and notifications are deliberate stubs the demo agent fills in. **Two intelligence stores back this repo:**
 
 - **Legacy:** iDempiere — CoreStory project ID **457** (`Product-Marketing-Lab` org).
   Query via `mcp__corestoryProduct-Marketing-Lab__send_message` with `project_id=457`.

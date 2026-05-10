@@ -25,7 +25,7 @@
   - `AGENTS.md` (universal cross-harness install)
   - `docs/design-spec.md` (parity table)
   - `.claude/skills/` (the bundle)
-- VO line: "This is `idempiere-reimagined`, a 40%-built Spring Boot reimagining of iDempiere's logistics domain. Two intelligence stores back it — the legacy iDempiere project in CoreStory, and this repo, also in CoreStory."
+- VO line: "This is `idempiere-reimagined`, a partially-built Spring Boot reimagining of iDempiere's logistics domain — orders and inventory are full implementations, warehouse is half-built, shipping and notifications are deliberate stubs the agent fills in. Two intelligence stores back it — the legacy iDempiere project in CoreStory, and this repo, also in CoreStory."
 
 ### 2. Open the JIRA story (30s)
 - Open `docs/jira-stories/SHIP-101-shipping-notification-flow.md` in the IDE

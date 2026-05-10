@@ -4,7 +4,7 @@
 
 ## Project context
 
-This is a 40%-built clean-room Spring Boot reimagining of iDempiere's logistics domain.
+This is a partially-built clean-room Spring Boot reimagining of iDempiere's logistics domain — orders and inventory are full implementations, warehouse is half-built, shipping and notifications are deliberate stubs the demo agent fills in.
 Five services + gateway + Next.js frontend. Stack: Spring Boot 3.4 + Apache Artemis (JMS) + Postgres-per-service + Spring Cloud Gateway + Next.js 14 + Docker Compose.
 
 ## Forbidden actions
