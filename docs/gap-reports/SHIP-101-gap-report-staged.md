@@ -25,8 +25,9 @@
 
 | Legacy iDempiere | Target idempiere-reimagined | Gap |
 |---|---|---|
-| `M_InOut`, `M_InOutLine`, `M_InOutConfirm` tables. Columns: `M_InOut_ID`, `DocumentNo`, `DocStatus`, `C_BPartner_ID`, `AD_Client_ID`, `AD_Org_ID`, `IsDropShip`, **`SendEMail` boolean** | _(filled by agent)_ — `shipments` table exists with `document_no`, `status`, `order_id`, `customer_id`, `ship_to_address_id`, `carrier_id`, `tracking_number`, **`send_email_flag`**. Direct mirror of legacy `SendEMail`. `shipment_lines` mirrors `M_InOutLine`. | DM-001: customer email not exposed on `OrderConfirmedEvent`/`ShipmentCreatedEvent` payload — agent fetches via cross-service call when constructing the event, OR extends event payload. |
+| `M_InOut`, `M_InOutLine`, `M_InOutConfirm` tables. Columns: `M_InOut_ID`, `DocumentNo`, `DocStatus`, `C_BPartner_ID`, `AD_Client_ID`, `AD_Org_ID`, `IsDropShip`, **`SendEMail` boolean** | _(filled by agent)_ — `shipments` table exists with `document_no`, `status`, `order_id`, `customer_id`, `ship_to_address_id`, `carrier_id`, `tracking_number`, **`send_email_flag`**. Direct mirror of legacy `SendEMail`. `shipment_lines` mirrors `M_InOutLine`. | DM-001: `ShipmentCreatedEvent.customerEmail` field exists at `domain-common/.../ShipmentCreatedEvent.java:27` but agent must populate it from order/customer when constructing the event in shipping-service. (Earlier framing implied payload extension or cross-service fetch — neither needed.) |
 | `R_MailText` (templates), `R_MailText_Trl` (translations), `AD_User` (with `EMail` field), `X_AD_UserMail` (outbound log), `AD_Note` (in-app system notes). Note: `AD_User.IsNoEMail` was claimed in the dry-run but **does not exist in source** (`docs/verification-report-2026-05-09.md`). | `email_templates`, `email_template_translations`, `email_outbox`, `in_app_notifications`, `notification_log` (channel-based), `notification_subscriptions`. Templates seeded with 3 demo templates for SHIP-101. **`notification_subscriptions.is_subscribed` is a clean modernization, not a parity mirror.** | DM-002: `notification_log.dedup_key` UNIQUE constraint exists; agent must compose key as `<eventId>:<channelCode>` to avoid duplicate sends on retries. |
+| (no direct analog — legacy uses `MNote` / `X_AD_UserMail` with ad-hoc free-text error messages; no high-level failure-taxonomy column.) | _(filled by agent)_ — `delivery_attempts` (V1) has `error_code VARCHAR(64)` (transport-level) and `error_message VARCHAR(1024)`. No high-level failure category column for triage. | DM-003: SHIP-101 AC #4 (revised) requires structured `failure_code` enum on `delivery_attempts` for triage. Agent generates `notifications-service/.../V3__add_failure_code_to_delivery_attempts.sql` adding the column with `CHECK` constraint over `{SMTP_DOWN, TEMPLATE_RENDER_FAIL, INVALID_RECIPIENT, RATE_LIMITED, INTERNAL_ERROR}` + partial index on non-null. Updates `DeliveryAttempt` entity. |
 
 ### 3. UI (UI)
 
@@ -63,8 +64,9 @@
 | ID | Category | Description | Resolution sketch | Effort |
 |---|---|---|---|---|
 | RO-001 | Capabilities | `shipping-service` lacks `ShipmentService.ship()` | Mirror `OrderService.confirm()` pattern | M |
-| DM-001 | Data model | Customer email not on event payload | Cross-service fetch when building event | S |
+| DM-001 | Data model | `ShipmentCreatedEvent.customerEmail` field exists; agent populates from order/customer | Read at event construction time in shipping-service | S |
 | DM-002 | Data model | Compose `notification_log.dedup_key` correctly | `<eventId>:<channelCode>` | S |
+| DM-003 | Data model | `delivery_attempts.failure_code` enum column missing | Flyway V3 migration: ADD COLUMN + `CHECK` constraint + partial index | S |
 | UI-001 | UI | "Ship Order" button needs enable-when-ready | `useFeatureEnabled('shipment.ship')` hook | S |
 | UI-002 | UI | `/notifications` page needs to repopulate live | Already polls every 5s — verify | S |
 | BL-001 | Business logic | Implement `ShipmentService.ship()` | Pattern: `OrderService.confirm()` | M |
@@ -76,18 +78,19 @@
 | IG-003 | Integration | `AccountingLogAdapter` → DB row in `notification_log` | Direct insert | S |
 | CO-001 | Constraints | Out-of-scope items called out: opt-in, multi-lang, SMS | Document only | S |
 
-**Total gaps:** 13. Demo-criticals: RO-001, BL-001, BL-002, BL-003, IG-001, IG-002, IG-003, RE-001, UI-001 (9). Background: DM-001, DM-002, UI-002, CO-001 (4).
+**Total gaps:** 14. Demo-criticals: RO-001, BL-001, BL-002, BL-003, IG-001, IG-002, IG-003, RE-001, UI-001, DM-003 (10). Background: DM-001, DM-002, UI-002, CO-001 (4).
 
 ## Implementation plan (sequenced, dependency-aware)
 
 1. **shipping-service** — implement `ShipmentService` and lift `POST /shipments/{id}/ship` from 501.  Publishes `ShipmentCreatedEvent` to `shipments.events`. Add `/shipments/health` endpoint.
 2. **domain-common** — verify `ShipmentCreatedEvent` payload supports the customer email field (already does — see `ShipmentCreatedEvent.customerEmail`).
 3. **notifications-service**: implement `MustacheTemplateRenderer.render()`.
-4. **notifications-service**: implement `EmailNotificationAdapter.send()` via `JavaMailSender`, `WarehouseLogAdapter.send()` via repo write, `AccountingLogAdapter.send()` via repo write.
-5. **notifications-service**: implement `ShipmentNotificationConsumer.onShipmentCreated()` — render + send for each of three channels, write `notification_log` row, handle adapter exceptions without rolling back.
-6. **frontend**: enable "Ship Order" button when `useFeatureEnabled('shipment.ship')` returns true.
-7. **Tests**: integration test (Testcontainers) for the full happy-path flow; failure-mode test (mock `JavaMailSender` to throw) confirms shipment stays SHIPPED + notification_log row marked FAILED.
-8. **DESIGN_SPEC**: one-line update to `docs/design-spec.md` § 1 (notifications-service capabilities) — "Added shipment-notification flow handler in notifications-service consuming ShipmentCreatedEvent and dispatching to email/warehouse/accounting channels."
+4. **notifications-service**: generate `V3__add_failure_code_to_delivery_attempts.sql` Flyway migration adding the `failure_code` enum column on `delivery_attempts` (per DM-003). Update `DeliveryAttempt` entity. Precedes adapter implementation since adapters populate `failure_code` in catch-blocks on send failure.
+5. **notifications-service**: implement `EmailNotificationAdapter.send()` via `JavaMailSender`, `WarehouseLogAdapter.send()` via repo write, `AccountingLogAdapter.send()` via repo write.
+6. **notifications-service**: implement `ShipmentNotificationConsumer.onShipmentCreated()` — render + send for each of three channels, write `notification_log` row, populate `failure_code` from the catch-block taxonomy, handle adapter exceptions without rolling back.
+7. **frontend**: enable "Ship Order" button when `useFeatureEnabled('shipment.ship')` returns true.
+8. **Tests**: integration test (Testcontainers) for the full happy-path flow; failure-mode test (mock `JavaMailSender` to throw) confirms shipment stays SHIPPED + notification_log row marked FAILED + `delivery_attempts` row written with `failure_code='SMTP_DOWN'`.
+9. **DESIGN_SPEC**: one-line update to `docs/design-spec.md` § 1 (notifications-service capabilities) — "Added shipment-notification flow handler in notifications-service consuming ShipmentCreatedEvent and dispatching to email/warehouse/accounting channels with structured failure-code triage."
 
 ## Validation
 

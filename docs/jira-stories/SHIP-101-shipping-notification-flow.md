@@ -26,7 +26,7 @@ As an operations team, we want internal warehouse and accounting acknowledgments
 
 4. **Tests cover:**
    - **Happy path:** confirmed order → ship → all three notifications recorded → email visible in MailHog
-   - **Failure mode:** notification send failure (e.g., MailHog down) does **not** roll back the shipment. The shipment row remains in `SHIPPED` status; the `notification_log` row is marked `FAILED` with the error message; `delivery_attempts` row is written with the failure detail.
+   - **Failure mode:** notification send failure (e.g., MailHog down) does **not** roll back the shipment. The shipment row remains in `SHIPPED` status; the `notification_log` row is marked `FAILED` with a free-text error message; `delivery_attempts` row is written with both the existing transport-level `error_code` and a structured `failure_code` from `{SMTP_DOWN, TEMPLATE_RENDER_FAIL, INVALID_RECIPIENT, RATE_LIMITED, INTERNAL_ERROR}` so failures are triageable without parsing message text.
    - **Idempotency:** retrying with the same `dedup_key` (composed of `eventId` + channel) does not create duplicate `notification_log` rows.
 
 5. **(Optional)** `docs/design-spec.md` is updated with a one-line entry under the "Capabilities → notifications-service" section describing the new shipment-notification flow.
@@ -56,6 +56,7 @@ The following gaps in the target are expected. The agent's gap-analysis skill sh
 - **IG-001** — `EmailNotificationAdapter.send()` throws `UnsupportedOperationException`. Implement using Spring `JavaMailSender` (already configured for MailHog SMTP in `application.yml`).
 - **IG-002** — `TemplateRenderer.render()` throws `UnsupportedOperationException`. Implement `MustacheTemplateRenderer` (or simple regex-based `@variable@` substitution mirroring iDempiere's `MMailText.parseVariables()`).
 - **DM-002** — `notification_log.dedup_key` is unique but the agent must compose the key correctly: recommended `<eventId>:<channel>` since events carry `eventId` (UUID).
+- **DM-003** — `delivery_attempts.failure_code` column not yet present. Resolution: agent generates `notifications-service/.../V3__add_failure_code_to_delivery_attempts.sql` Flyway migration adding the column with a `CHECK` constraint over the enum (`SMTP_DOWN`, `TEMPLATE_RENDER_FAIL`, `INVALID_RECIPIENT`, `RATE_LIMITED`, `INTERNAL_ERROR`) plus a partial index on non-null values. Adds the field to the `DeliveryAttempt` entity; populates it in the catch-blocks of the three channel adapters when send fails. Coexists with V1's `error_code VARCHAR(64)` which retains transport-level error detail.
 - **RO-001** — Frontend "Ship Order" button needs to know when shipping-service is online. The recommended pattern: a `useFeatureEnabled('shipment.ship')` hook hits `/shipments/health` and enables when 200. After this story lands, the button enables.
 
 ## Demo recording note

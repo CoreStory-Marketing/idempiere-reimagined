@@ -177,7 +177,7 @@ This skill is the focus of the recorded `idempiere-reimagined` demo. The recordi
 4. Gap report renders
 5. Context inventory renders alongside (or as a follow-up message) — proves volume of grounding
 6. HITL gate fires — user approves
-7. Implementation begins; mid-flight, the user injects: *"Use the dedupe pattern from `inventory-service` for the notification handlers — we don't want duplicate sends on consumer redelivery."* Phase 4a fires — agent acknowledges, queries the target intel store for `inventory-service`'s dedupe pattern, integrates into the un-written notification handlers, logs the new source
+7. Implementation begins; mid-flight, the user injects: *"Use the publisher pattern from `OrderEventPublisher` in `orders-service` — same `JmsTemplate.convertAndSend` shape, topic-config-via-`@Value`, try/catch error handling that logs-but-doesn't-rethrow. Apply this to `ShipmentEventPublisher` in `shipping-service`."* Phase 4a fires — agent acknowledges, queries the target intel store for `OrderEventPublisher`'s body + design rationale (the `@Value` topic config with default fallback, the try/catch with rationale comment about transactional decoupling, the structured log shape), integrates the pattern faithfully into `ShipmentEventPublisher`, logs the new source
 8. Code lands across `shipping-service`, `notifications-service`, frontend
 9. Tests run green
 10. UI demo: "Ship Order" button enables, click triggers flow, MailHog shows email, `/notifications` shows three log entries

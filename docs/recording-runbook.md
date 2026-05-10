@@ -1,6 +1,8 @@
 # Recording runbook — `brownfield-feature-implementation` demo
 
-> Step-by-step for QuickTime capture. Target length: 12–14 min. The framing emphasizes how much grounding context the agent retrieves and integrates at runtime, not just that it produces working code.
+> Step-by-step for QuickTime capture. Target length: 12–14 min. The framing emphasizes (a) how much grounding context the agent retrieves and integrates at runtime, (b) the auditable trail (Phase 7 context inventory ledger) of every grounding source consulted, and (c) the honest velocity diff vs a vanilla agent on tasks requiring legacy reach.
+>
+> **Important framing constraint (locked 2026-05-10 after dry-run findings):** vanilla agents *can* complete brownfield tasks at this codebase's scale (~33K target, ~1.4M legacy reach). CoreStory's load-bearing value is **NOT** "vanilla fails ugly." It is **auditability + consistency at scale + Living Intelligence on an evolving codebase + skill-bundle guardrail enforcement**. Frame the comparison honestly — both agents work; what differs is speed, tool-call efficiency, search-space confidence, and audit-trail legibility.
 
 ## Pre-stage (5 min before recording)
 
@@ -13,9 +15,9 @@
 5. Verify CoreStory project 457 reachable: `mcp__corestoryProduct-Marketing-Lab__list_projects` should return both projects (legacy 457 + target).
 6. **Stage the user-guidance message** in a notes app or clipboard, ready to paste mid-implementation (beat 7):
 
-   > Use the dedupe pattern from `inventory-service` for the notification handlers — we don't want duplicate sends on consumer redelivery.
+   > Use the publisher pattern from `OrderEventPublisher` in `orders-service` — same `JmsTemplate.convertAndSend` shape, topic-config-via-`@Value`, try/catch error handling that logs-but-doesn't-rethrow. Apply this to `ShipmentEventPublisher` in `shipping-service`.
 
-7. **Have the ungrounded-comparison clip ready** for the closing sidebar (beat 12). If pre-recorded, save at `assets/ungrounded-comparison.mov` (30–45s of the same SHIP-101 prompt run against an agent *without* CoreStory MCP + the skill bundle — output is generic, lacks parity references, ignores conventions). Cue it on a second screen or in a separate browser tab. If recording it live as the closing beat, have the "no-CoreStory" Claude Code session pre-staged.
+7. **Stage the side-by-side comparison capture** for beat 12. Two fresh `claude` sessions in `/Users/johnives/Downloads/Claude Context/idempiere-reimagined/`: one with CoreStory MCP available (grounded), one with the explicit constraint *"do NOT use any tool whose name begins with `mcp__`; use only Read/Grep/Glob/Bash"* (vanilla). Both will receive the same legacy-parity task prompt (the iDempiere failure-tracking philosophy injection — see beat 12 for the prompt text). Pre-stage the prompt text in clipboard. Plan to capture both runs in QuickTime sequentially or side-by-side, then iMovie-edit into a split-screen frame.
 8. Clean coffee mug off desk. Phone on silent.
 
 ## Take structure
@@ -120,14 +122,14 @@ The point of compressing this beat is: code generation is the boring part of the
 - VO: "Notice — every file is in the target repo. The agent never reaches into the legacy iDempiere repo. The guardrails in `AGENTS.md` forbid it."
 - **~30 seconds in, pause the agent. Type the staged user-guidance message into chat:**
 
-  > Use the dedupe pattern from `inventory-service` for the notification handlers — we don't want duplicate sends on consumer redelivery.
+  > Use the publisher pattern from `OrderEventPublisher` in `orders-service` — same `JmsTemplate.convertAndSend` shape, topic-config-via-`@Value`, try/catch error handling that logs-but-doesn't-rethrow. Apply this to `ShipmentEventPublisher` in `shipping-service`.
 
 - ON-SCREEN CAPTION: "User guidance injected mid-flight"
-- VO: "A senior engineer would catch this constraint mid-implementation. Watch what happens — the agent doesn't restart, doesn't argue, doesn't lose the plan. It pulls one more piece of context."
-- ON-SCREEN CAPTION: "Pulling: inventory-service dedupe pattern (target intel store)"
-- Agent queries the target intel store, finds the dedupe pattern (unique constraint + idempotency key check), applies it to the notification handlers it hasn't yet written.
-- ON-SCREEN CAPTION: "Integrating: dedupe pattern → notification handlers"
-- VO: "Sixteen grounding sources now, not thirteen. Three of those came from runtime — the agent retrieving on demand as the implementation evolved. That's what scales as the spec set grows."
+- VO: "A senior engineer reviewing mid-implementation would say this. Watch what happens — the agent doesn't restart, doesn't argue, doesn't lose the plan. The skill catches the new context, queries CoreStory for the referenced pattern, and applies it auditably."
+- ON-SCREEN CAPTION: "Querying: orders-service OrderEventPublisher pattern"
+- Agent queries the target intel store, retrieves `OrderEventPublisher`'s body + design rationale (`@Value` topic config with default fallback, try/catch with rationale comment about transactional decoupling preventing rollback on broker outage, structured log shape using `event.eventType()`/`event.eventId()`), applies the same pattern faithfully to `ShipmentEventPublisher`.
+- ON-SCREEN CAPTION: "Applying: OrderEventPublisher pattern → ShipmentEventPublisher"
+- VO: "One more grounding source, retrieved on-demand because the user redirected. The audit ledger captures it. That's what guardrail enforcement looks like in practice — the agent stays consistent with established conventions even when the user's redirects could push it off-course. Every retrieval auditable, every choice traceable."
 - Agent finishes:
   - `notifications-service/.../channels/EmailNotificationAdapter.java`
   - `notifications-service/.../channels/WarehouseLogAdapter.java`
@@ -155,15 +157,26 @@ The point of compressing this beat is: code generation is the boring part of the
 ### 11. Recap (30s)
 - VO: "What you just watched: the agent pulled sixteen distinct pieces of grounding context — legacy behavior parity, target schema, target conventions, ticket acceptance criteria, your in-flight guidance — and synthesized all of them into a working implementation. None of that fits in a single prompt. CoreStory's job is to feed the agent the right slice of a large spec set on demand. That's what makes this scale as the spec set grows."
 
-### 12. Closing comparison — grounded vs ungrounded (30s)
+### 12. Closing comparison — grounded vs vanilla, honestly (45s)
 
-The "materially better than without CoreStory" claim made visible.
+The honest velocity-and-confidence story made visible. **Empirical baseline (from the 2026-05-10 dry-run on the iDempiere failure-tracking parity task):** grounded completed in ~75s with 5 tool calls; vanilla completed in ~5min with 16 tool calls; *both* produced clean, legacy-parity-aware code with zero hallucinations. The diff is real and measurable — it's just not "vanilla fails ugly." Frame accordingly.
 
-- Cut to the pre-staged ungrounded clip (`assets/ungrounded-comparison.mov`) OR run the same SHIP-101 prompt live in a no-CoreStory Claude Code session.
-- Show 10–15 seconds of the ungrounded output: generic implementation suggestions, no parity reference, ignores existing conventions, no awareness of the dedupe pattern, hallucinated file paths.
-- Cut back to the grounded result on screen.
-- ON-SCREEN CAPTION (split-screen if possible): "Same prompt. Left: with CoreStory + skill bundle. Right: without."
-- VO: "Same ticket, no CoreStory. The agent guesses at conventions, hallucinates file paths, ignores the dedupe pattern, doesn't know there's a legacy parity reference to honor. The skill is what closes that gap. That's the value at runtime — and it scales with whatever you put behind it."
+- Capture (or replay from pre-staged QuickTime clips) two fresh `claude` sessions running the same legacy-parity prompt:
+
+  > For the failure-mode handling in `delivery_attempts`, ensure the structure mirrors iDempiere's email-dispatch failure-tracking philosophy. What does iDempiere log when an email-send fails, when does it roll back vs continue, and how do downstream readers (operators, monitoring) discover failures? Apply that same audit-trail philosophy to our catch-block code in `notifications-service`. Cite specific iDempiere classes/methods/lines that informed each design choice.
+
+  Session A (grounded): CoreStory MCP available — agent uses `mcp__corestoryProduct-Marketing-Lab__send_message` against project 457 (legacy intel store, conv 5276 cached briefing).
+  Session B (vanilla): explicit constraint *"do NOT use any tool whose name begins with `mcp__`"* — agent must `find`/`grep`/`Read` directly against the 1.4M-line legacy at `/Users/johnives/Downloads/Claude Context/idempiere/`.
+
+- ON-SCREEN CAPTION (split-screen): "Same task. Left: with CoreStory + skill bundle. Right: vanilla agent (file/grep tools only)."
+- Show ~15s of each run side-by-side. Both produce working code. The visible diffs to highlight on screen:
+  - **Tool calls:** grounded ~5, vanilla ~16 (3× more for vanilla)
+  - **Wall time:** grounded ~75s, vanilla ~5 min (4× slower for vanilla)
+  - **Citations:** grounded retrieves load-bearing references with rationale ("the philosophical synthesis"); vanilla retrieves *more* references via transitive grep but flags conservative confidence ("did not transitively explore MUserMail or R_RequestUpdates which might have revealed additional conventions")
+  - **Audit-trail legibility:** grounded shows one CoreStory query with cited answer; vanilla shows scrolling grep + Read across many files
+- Final frame: side-by-side of the two generated catch-blocks. **Both work. The diff is at the workflow level, not the output level.**
+- ON-SCREEN CAPTION: "75s · 5 tool calls · audit ledger captures everything   |   5min · 16 tool calls · search-space confidence: low"
+- VO: "Same task, both completed. Vanilla took four times longer and three times the tool calls. More importantly: vanilla can only verify what it's already read; the grounded agent knows the search space and produces an auditable ledger of every grounding source. As your codebase grows past iDempiere's 1.4 million lines, that gap widens. As more agents work concurrently across teams, that consistency matters. The Phase 7 audit ledger is the engineering-leader-trustable artifact — every grounding source captured, every decision traceable. That's CoreStory's load-bearing value. Not 'vanilla fails.' This scales, this is auditable, this is what brownfield modernization looks like in production."
 
 ## Re-record gates
 
@@ -172,11 +185,11 @@ Stop and re-record if:
 - The agent stalls > 30s in any phase (Phase 2 querying excepted — that's expected).
 - A CoreStory query returns vague output. (Mitigation: pre-staged gap report + verified conversation 5276 prevent this.)
 - The context inventory (beat 5.5) shows fewer than ~10 sources or vague entries — kills the volume-handling story.
-- The user-guidance moment (beat 7) doesn't visibly change the agent's behavior — agent must pull the dedupe pattern and apply it to the notification handlers, otherwise the runtime-context-integration claim falls flat.
+- The user-guidance moment (beat 7) doesn't visibly change the agent's behavior — agent must pull the `OrderEventPublisher` pattern and apply it to `ShipmentEventPublisher`, otherwise the runtime-context-integration claim falls flat.
 - The UI doesn't refresh visibly when the agent's code lands.
 - MailHog doesn't show the email.
 - Any 501 error after implementation.
-- The closing comparison (beat 12) shows ungrounded output that's *too good* — if the no-CoreStory agent happens to produce a plausible answer, the contrast doesn't land. Re-shoot the ungrounded clip with a more naive prompt, or pick a different ungrounded model that demonstrates the gap more clearly.
+- The closing comparison (beat 12) shows the two runs within 20% of each other on tool calls or wall time — if the gap is too thin, re-capture with the legacy-parity prompt verbatim from the dry-run (which produced 4× speed / 3× call diff). Do not manufacture a "vanilla fails" framing — lean on the actual data. If the gap is genuinely small even on a faithful re-run, drop beat 12 entirely and lean on beat 5.5 (context inventory) + beat 11 (recap) for the value-prop close.
 
 ## Post-record
 
