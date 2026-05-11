@@ -19,6 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
@@ -47,6 +48,7 @@ import static org.awaitility.Awaitility.await;
  * <p>Backed by an embedded Apache Artemis broker (boot starter-artemis test profile config).
  */
 @SpringBootTest(classes = com.corestory.idempiere.inventory.InventoryApplication.class)
+@Import(OrderConfirmedListenerIntegrationTest.InventoryReservedSink.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class OrderConfirmedListenerIntegrationTest {
 

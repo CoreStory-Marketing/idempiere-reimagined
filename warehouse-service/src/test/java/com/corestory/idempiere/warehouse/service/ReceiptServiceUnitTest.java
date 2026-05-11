@@ -61,8 +61,11 @@ class ReceiptServiceUnitTest {
         rule.setPriority((short) 80);
 
         when(vendorRepository.findById(1L)).thenReturn(Optional.of(vendor));
-        when(putAwayRuleRepository.findByProductIdAndWarehouseIdOrderByPriorityDesc(10L, 1L))
-            .thenReturn(List.of(rule));
+        // Stub the default method `findBest` directly, not the underlying JPA-derived
+        // query method it wraps. Mockito's default Answer returns Optional.empty() for
+        // default interface methods unless explicitly stubbed, so stubbing
+        // `findByProductIdAndWarehouseIdOrderByPriorityDesc` alone doesn't propagate.
+        when(putAwayRuleRepository.findBest(10L, 1L)).thenReturn(Optional.of(rule));
         when(receiptRepository.save(any(Receipt.class))).thenAnswer(inv -> inv.getArgument(0));
 
         CreateReceiptRequest req = new CreateReceiptRequest(

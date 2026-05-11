@@ -16,7 +16,7 @@ import org.springframework.jms.annotation.EnableJms;
     "com.corestory.idempiere.common"
 })
 @EnableJms
-@EnableJpaAuditing
+@EnableJpaAuditing(dateTimeProviderRef = "auditingDateTimeProvider")
 public class WarehouseApplication {
 
     public static void main(String[] args) {

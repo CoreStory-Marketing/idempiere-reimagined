@@ -2,8 +2,10 @@ package com.corestory.idempiere.orders.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.domain.AuditorAware;
 
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 /**
@@ -27,5 +29,20 @@ public class JpaAuditingConfig {
     @Bean
     public AuditorAware<String> auditorProvider() {
         return () -> Optional.of(SYSTEM_PRINCIPAL);
+    }
+
+    /**
+     * Custom date-time provider so Spring Data Auditing sets {@code @CreatedDate}/
+     * {@code @LastModifiedDate} fields on {@link com.corestory.idempiere.orders.model.AuditableEntity}
+     * as {@link OffsetDateTime}. The default provider returns {@link java.time.LocalDateTime},
+     * which Spring Data's auditing layer cannot convert to {@link OffsetDateTime} —
+     * resulting in {@code InvalidDataAccessApiUsageException} on every save.
+     *
+     * <p>The {@code @EnableJpaAuditing} annotation on {@code OrdersApplication} must
+     * reference this bean via {@code dateTimeProviderRef = "auditingDateTimeProvider"}.
+     */
+    @Bean
+    public DateTimeProvider auditingDateTimeProvider() {
+        return () -> Optional.of(OffsetDateTime.now());
     }
 }

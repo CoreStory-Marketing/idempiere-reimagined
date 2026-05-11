@@ -5,6 +5,7 @@ import com.corestory.idempiere.orders.model.OrderStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -19,10 +20,21 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Optional<Order> findByDocumentNo(String documentNo);
 
+    @Override
+    @EntityGraph(attributePaths = "lines")
+    Optional<Order> findById(Long id);
+
+    @Override
+    @EntityGraph(attributePaths = "lines")
+    Page<Order> findAll(Pageable pageable);
+
+    @EntityGraph(attributePaths = "lines")
     Page<Order> findByCustomerId(Long customerId, Pageable pageable);
 
+    @EntityGraph(attributePaths = "lines")
     Page<Order> findByStatusIn(Collection<OrderStatus> statuses, Pageable pageable);
 
+    @EntityGraph(attributePaths = "lines")
     Page<Order> findByStatusInAndCustomerId(Collection<OrderStatus> statuses,
                                             Long customerId,
                                             Pageable pageable);

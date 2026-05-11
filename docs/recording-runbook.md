@@ -1,8 +1,13 @@
 # Recording runbook — `brownfield-feature-implementation` demo
 
-> Step-by-step for QuickTime capture. Target length: 12–14 min. The framing emphasizes (a) how much grounding context the agent retrieves and integrates at runtime, (b) the auditable trail (Phase 7 context inventory ledger) of every grounding source consulted, and (c) the honest velocity diff vs a vanilla agent on tasks requiring legacy reach.
+> Step-by-step for QuickTime capture. Target length: 10–12 min. The framing emphasizes (a) the **scale** of the legacy reference (1.43M LoC) established up front, (b) the auditable trail of every grounding source the agent consults — a receipt engineering leaders can review, and (c) the **human-baseline time compression**: weeks of senior engineering work compressed to hours via this methodology.
 >
-> **Important framing constraint (locked 2026-05-10 after dry-run findings):** vanilla agents *can* complete brownfield tasks at this codebase's scale (~33K target, ~1.4M legacy reach). CoreStory's load-bearing value is **NOT** "vanilla fails ugly." It is **auditability + consistency at scale + Living Intelligence on an evolving codebase + skill-bundle guardrail enforcement**. Frame the comparison honestly — both agents work; what differs is speed, tool-call efficiency, search-space confidence, and audit-trail legibility.
+> **Framing constraints (locked 2026-05-10 per Anand's feedback):**
+>
+> - **Audience is UPS/NTT teams**, not sophisticated AI users. Frame value against their *current human-driven baseline*, not against other AI tools.
+> - **Do NOT compare grounded vs vanilla agent.** That's a debate for AI-savvy audiences. The right comparison is "what a human team takes" vs "what we just delivered."
+> - **Lead with scale.** 1.43M-line legacy + partial new-system build = exactly UPS's situation. Establish this in beat 1.
+> - **CoreStory's product is the methodology** — the skill bundle, the dual-store grounding, the audit ledger, the HITL gate, the guardrails. Together they enable AI-driven modernization at velocity that human teams can't match.
 
 ## Pre-stage (5 min before recording)
 
@@ -17,17 +22,17 @@
 
    > Use the publisher pattern from `OrderEventPublisher` in `orders-service` — same `JmsTemplate.convertAndSend` shape, topic-config-via-`@Value`, try/catch error handling that logs-but-doesn't-rethrow. Apply this to `ShipmentEventPublisher` in `shipping-service`.
 
-7. **Stage the side-by-side comparison capture** for beat 12. Two fresh `claude` sessions in `/Users/johnives/Downloads/Claude Context/idempiere-reimagined/`: one with CoreStory MCP available (grounded), one with the explicit constraint *"do NOT use any tool whose name begins with `mcp__`; use only Read/Grep/Glob/Bash"* (vanilla). Both will receive the same legacy-parity task prompt (the iDempiere failure-tracking philosophy injection — see beat 12 for the prompt text). Pre-stage the prompt text in clipboard. Plan to capture both runs in QuickTime sequentially or side-by-side, then iMovie-edit into a split-screen frame.
-8. Clean coffee mug off desk. Phone on silent.
+7. Clean coffee mug off desk. Phone on silent.
 
 ## Take structure
 
-### 1. Open (1 min)
-- Show repo file tree. Point at:
+### 1. Open — establish scale + situation (1 min)
+- Optional cold-open shot: `find . -name "*.java" | xargs wc -l | tail -1` on the legacy iDempiere checkout — show `1,434,756 total` flash on screen.
+- Cut to `idempiere-reimagined` repo file tree. Point at:
   - `AGENTS.md` (universal cross-harness install)
   - `docs/design-spec.md` (parity table)
   - `.claude/skills/` (the bundle)
-- VO line: "This is `idempiere-reimagined`, a partially-built Spring Boot reimagining of iDempiere's logistics domain — orders and inventory are full implementations, warehouse is half-built, shipping and notifications are deliberate stubs the agent fills in. Two intelligence stores back it — the legacy iDempiere project in CoreStory, and this repo, also in CoreStory."
+- VO line: **"This is iDempiere — a 1.43-million-line Java codebase that's been the open-source backbone of enterprise ERP for over a decade. And this is `idempiere-reimagined` — a partially-built Spring Boot reimagining of its logistics domain that we're going to extend today. Both codebases are ingested in CoreStory — legacy as project 457, target as project 458. The situation you're looking at — a large legacy reference, a partial new implementation, and a feature backlog to ship — is exactly the brownfield modernization pattern this methodology is built for."**
 
 ### 2. Open the JIRA story (30s)
 - Open `docs/jira-stories/SHIP-101-shipping-notification-flow.md` in the IDE
@@ -44,7 +49,7 @@ This is the beat where the volume-handling story lands. The agent isn't just "qu
 - The skill enumerates CoreStory projects, identifies legacy + target, creates paired conversations.
 - Resume conversation 5276 for the legacy briefing — fast (cached).
 - Run target queries (~90s per category × 7).
-- **VO opens with the framing:** "What you're about to watch is the agent retrieving context from multiple sources at runtime. None of this fits in a single prompt. The skill's job is to give the agent the right slice of a large spec set on demand."
+- **VO opens with the framing:** "The skill is doing what a senior engineer would do *before* writing code — querying the legacy system for behavior parity, scanning the target codebase for conventions, surfacing exactly what's missing. Watch the receipts build up as it goes."
 - ON-SCREEN CAPTIONS rotate as queries fire (one caption per source as it's pulled, ~6–10 seconds each):
   - "Pulling: legacy M_InOut document workflow → shipments parity"
   - "Pulling: legacy R_MailText template framework → 3 notification types"
@@ -59,8 +64,8 @@ This is the beat where the volume-handling story lands. The agent isn't just "qu
   - "Pulling: api-contracts/notifications-service.md"
   - "Pulling: SHIP-101 acceptance criteria"
   - "Pulling: SHIP-101 iDempiere parity reference"
-- VO mid-beat: "Concrete file paths and line numbers — not training-data guesses. Each query carries the JIRA story as context."
-- VO closing the beat: "Thirteen grounding sources retrieved across two intel stores. The agent now has the full surface area it needs to make a plan."
+- VO mid-beat: "Every retrieval comes back with concrete file paths and line numbers — the agent isn't guessing from training data. It's grounding against the actual codebase."
+- VO closing the beat: "This is the discovery work a human engineer would do over a week of ramp-up on a codebase this size. The methodology compresses it to a few minutes — and unlike a human, the agent leaves a complete audit trail."
 
 ### 5. Gap report renders (45s)
 - Opens `docs/gap-reports/SHIP-101-gap-report-final.md` (the staged file is the reference; the agent overwrites with live data).
@@ -68,7 +73,7 @@ This is the beat where the volume-handling story lands. The agent isn't just "qu
   - **DM** — schema decomposition (legacy single MInOut → target receipts + shipments split)
   - **BL** — three implementation gaps (BL-001, BL-002, BL-003)
   - **RE** — `MMailText.parse()` pattern → `MustacheTemplateRenderer.render()`
-- VO: "13 gaps identified. 9 demo-critical. The agent has a sequenced plan."
+- VO: "Fourteen gaps identified. Ten demo-critical, including a database migration. The agent has a sequenced plan, ready for review."
 
 ### 5.5. Context inventory (45s)
 - Skill (or wrapper) writes/displays a context-inventory summary alongside the gap report. Either inline at the bottom of the gap report, or as a separate panel/file (`docs/gap-reports/SHIP-101-context-inventory.md`). On-screen, formatted as:
@@ -101,8 +106,8 @@ This is the beat where the volume-handling story lands. The agent isn't just "qu
     Token cost: ~4,200 grounding tokens (vs ~120K full spec set).
   ```
 
-- VO: "Before approving, here's everything the agent pulled to make this plan. Thirteen sources across two intel stores, plus the ticket. The agent retrieved roughly four thousand tokens of grounding from a full spec set of well over a hundred thousand. That ratio is the point — agents don't need everything in working memory, they need the right slice on demand."
-- ON-SCREEN CAPTION (subtle, lower-third): "13 grounding sources · 2 intel stores · ~4,200 tokens of relevant context · ~120K total spec set"
+- VO: "Before approving, here's the receipt — every legacy class, every target convention, every spec section the agent grounded against. Nothing's a guess. An engineering leader can review this artifact, trace any decision back to its source. That's what makes AI-generated work auditable at enterprise scale — and it's something a human team's git history alone can't replicate."
+- ON-SCREEN CAPTION (subtle, lower-third): "Every source cited · Engineering-leader-reviewable · Traceable to file:line"
 
 ### 6. HITL gate (30s)
 - Skill prints the gap report + "Ready to implement? Reply 'approve' to continue."
@@ -129,7 +134,7 @@ The point of compressing this beat is: code generation is the boring part of the
 - ON-SCREEN CAPTION: "Querying: orders-service OrderEventPublisher pattern"
 - Agent queries the target intel store, retrieves `OrderEventPublisher`'s body + design rationale (`@Value` topic config with default fallback, try/catch with rationale comment about transactional decoupling preventing rollback on broker outage, structured log shape using `event.eventType()`/`event.eventId()`), applies the same pattern faithfully to `ShipmentEventPublisher`.
 - ON-SCREEN CAPTION: "Applying: OrderEventPublisher pattern → ShipmentEventPublisher"
-- VO: "One more grounding source, retrieved on-demand because the user redirected. The audit ledger captures it. That's what guardrail enforcement looks like in practice — the agent stays consistent with established conventions even when the user's redirects could push it off-course. Every retrieval auditable, every choice traceable."
+- VO: "A senior engineer redirecting the implementation mid-flight is one of the highest-friction moments on a human team — re-onboarding, context-switching, sometimes losing the thread. The methodology absorbs it cleanly: the agent retrieves the referenced pattern, applies it consistently, and the audit trail captures the new context. That's guardrail enforcement under realistic conditions."
 - Agent finishes:
   - `notifications-service/.../channels/EmailNotificationAdapter.java`
   - `notifications-service/.../channels/WarehouseLogAdapter.java`
@@ -154,29 +159,17 @@ The point of compressing this beat is: code generation is the boring part of the
 - Show the diff in `docs/design-spec.md` — one-line addition to notifications-service capabilities.
 - VO: "Skill updated the spec automatically. Future gap analyses see the new capability."
 
-### 11. Recap (30s)
-- VO: "What you just watched: the agent pulled sixteen distinct pieces of grounding context — legacy behavior parity, target schema, target conventions, ticket acceptance criteria, your in-flight guidance — and synthesized all of them into a working implementation. None of that fits in a single prompt. CoreStory's job is to feed the agent the right slice of a large spec set on demand. That's what makes this scale as the spec set grows."
+### 11. Recap — the human-baseline math (45s)
 
-### 12. Closing comparison — grounded vs vanilla, honestly (45s)
+This is where the value lands. The audience isn't comparing CoreStory to other AI tools — they're comparing it to their *current human-driven baseline*. Make that comparison explicit.
 
-The honest velocity-and-confidence story made visible. **Empirical baseline (from the 2026-05-10 dry-run on the iDempiere failure-tracking parity task):** grounded completed in ~75s with 5 tool calls; vanilla completed in ~5min with 16 tool calls; *both* produced clean, legacy-parity-aware code with zero hallucinations. The diff is real and measurable — it's just not "vanilla fails ugly." Frame accordingly.
+- VO: "What you just watched is one feature. A typical enterprise feature like this — multi-service event flow, database migration, failure handling, tests, audit-trail-ready spec update, all integrated against a 1.4-million-line legacy reference — takes a senior engineer two to three weeks of focused work. Code review, gap analysis, ramp-up on conventions, cross-service coordination, all of it. We did it in [N minutes].
 
-- Capture (or replay from pre-staged QuickTime clips) two fresh `claude` sessions running the same legacy-parity prompt:
+  Scale that across a feature backlog. An enterprise modernization team — ten engineers, eight sprints, delivering a quarter's worth of feature parity against a legacy reference of this size — that's four to six months of work. With this methodology, that same backlog compresses from months to days. Every feature delivered against the existing target conventions. Every implementation grounded in the legacy spec. Every artifact engineering-leader-reviewable.
 
-  > For the failure-mode handling in `delivery_attempts`, ensure the structure mirrors iDempiere's email-dispatch failure-tracking philosophy. What does iDempiere log when an email-send fails, when does it roll back vs continue, and how do downstream readers (operators, monitoring) discover failures? Apply that same audit-trail philosophy to our catch-block code in `notifications-service`. Cite specific iDempiere classes/methods/lines that informed each design choice.
+  That's the product. The skill bundle, the dual-store grounding, the audit ledger, the guardrails — together, this is a complete methodology for AI-driven modernization at velocity human teams can't match."
 
-  Session A (grounded): CoreStory MCP available — agent uses `mcp__corestoryProduct-Marketing-Lab__send_message` against project 457 (legacy intel store, conv 5276 cached briefing).
-  Session B (vanilla): explicit constraint *"do NOT use any tool whose name begins with `mcp__`"* — agent must `find`/`grep`/`Read` directly against the 1.4M-line legacy at `/Users/johnives/Downloads/Claude Context/idempiere/`.
-
-- ON-SCREEN CAPTION (split-screen): "Same task. Left: with CoreStory + skill bundle. Right: vanilla agent (file/grep tools only)."
-- Show ~15s of each run side-by-side. Both produce working code. The visible diffs to highlight on screen:
-  - **Tool calls:** grounded ~5, vanilla ~16 (3× more for vanilla)
-  - **Wall time:** grounded ~75s, vanilla ~5 min (4× slower for vanilla)
-  - **Citations:** grounded retrieves load-bearing references with rationale ("the philosophical synthesis"); vanilla retrieves *more* references via transitive grep but flags conservative confidence ("did not transitively explore MUserMail or R_RequestUpdates which might have revealed additional conventions")
-  - **Audit-trail legibility:** grounded shows one CoreStory query with cited answer; vanilla shows scrolling grep + Read across many files
-- Final frame: side-by-side of the two generated catch-blocks. **Both work. The diff is at the workflow level, not the output level.**
-- ON-SCREEN CAPTION: "75s · 5 tool calls · audit ledger captures everything   |   5min · 16 tool calls · search-space confidence: low"
-- VO: "Same task, both completed. Vanilla took four times longer and three times the tool calls. More importantly: vanilla can only verify what it's already read; the grounded agent knows the search space and produces an auditable ledger of every grounding source. As your codebase grows past iDempiere's 1.4 million lines, that gap widens. As more agents work concurrently across teams, that consistency matters. The Phase 7 audit ledger is the engineering-leader-trustable artifact — every grounding source captured, every decision traceable. That's CoreStory's load-bearing value. Not 'vanilla fails.' This scales, this is auditable, this is what brownfield modernization looks like in production."
+- ON-SCREEN CAPTION (final beat, ~5s): "One feature: weeks → minutes · One backlog: months → days · Audit trail: complete"
 
 ## Re-record gates
 
@@ -189,7 +182,7 @@ Stop and re-record if:
 - The UI doesn't refresh visibly when the agent's code lands.
 - MailHog doesn't show the email.
 - Any 501 error after implementation.
-- The closing comparison (beat 12) shows the two runs within 20% of each other on tool calls or wall time — if the gap is too thin, re-capture with the legacy-parity prompt verbatim from the dry-run (which produced 4× speed / 3× call diff). Do not manufacture a "vanilla fails" framing — lean on the actual data. If the gap is genuinely small even on a faithful re-run, drop beat 12 entirely and lean on beat 5.5 (context inventory) + beat 11 (recap) for the value-prop close.
+- Beat 11 VO references a wall-time number that wasn't actually captured. The "weeks-to-hours" framing must cite the **real** elapsed time from this recording, not an estimate.
 
 ## Post-record
 

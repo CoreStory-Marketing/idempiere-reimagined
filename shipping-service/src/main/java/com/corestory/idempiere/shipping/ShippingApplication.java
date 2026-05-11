@@ -15,7 +15,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
     "com.corestory.idempiere.shipping",
     "com.corestory.idempiere.common"
 })
-@EnableJpaAuditing
+@EnableJpaAuditing(dateTimeProviderRef = "auditingDateTimeProvider")
 public class ShippingApplication {
 
     public static void main(String[] args) {

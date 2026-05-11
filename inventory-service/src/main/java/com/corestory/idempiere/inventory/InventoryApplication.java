@@ -17,7 +17,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
     "com.corestory.idempiere.common"
 })
 @EnableJms
-@EnableJpaAuditing
+@EnableJpaAuditing(dateTimeProviderRef = "auditingDateTimeProvider")
 @EnableScheduling
 public class InventoryApplication {
 
