@@ -84,11 +84,12 @@ The user may inject new guidance during implementation — clarifications, addit
 - **Vague guidance ("make it cleaner").** Ask one targeted question: *"Cleaner in what dimension — naming, layering, error handling, performance? And do you want me to query for an existing pattern in the repo to anchor against?"* Do not interpret vague guidance unilaterally.
 - **Out-of-scope guidance ("also implement INV-202 while you're at it").** Refuse. Cite scope: *"INV-202 is out of scope for this run. Want me to queue it as a follow-up after SHIP-101 closes?"*
 
-### Phase 5 — Test
+### Phase 5 — Test + deploy
 
 14. Generate or update tests per the gap report's "tests" column.
 15. Run them (`mvn -pl <service> -am verify` or harness equivalent).
 16. Iterate until green. Surface failures clearly — don't suppress.
+17. **Deploy to the local stack.** Once tests pass, rebuild the Docker images for the services you modified and restart their containers so the changes are actually running. Example: `docker compose build shipping-service notifications-service && docker compose up -d shipping-service notifications-service`. Wait ~30s for services to become healthy (Flyway migrations run on startup; the gateway's downstream health probes need a moment to pick up the new instances). This step is non-optional — without it, every end-to-end verification (UI flow, MailHog, /notifications) still runs against the old stub images.
 
 ### Phase 6 — Spec touch-up (optional)
 

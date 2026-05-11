@@ -142,13 +142,17 @@ The point of compressing this beat is: code generation is the boring part of the
   - `notifications-service/.../events/ShipmentNotificationConsumer.java`
   - `frontend/components/orders/ShipOrderButton.tsx`
 
-### 8. Tests run green (1 min)
+### 8. Tests pass + deploy to local stack (2 min)
 - Agent runs `mvn -pl shipping-service,notifications-service -am verify`.
 - Tests pass: happy path, failure mode, idempotency.
-- VO: "All three test classes green — happy path, MailHog-down failure mode, idempotency replay."
+- ON-SCREEN CAPTION: "Tests green — happy path · failure mode (MailHog down) · idempotency replay"
+- Agent runs `docker compose build shipping-service notifications-service` then `docker compose up -d shipping-service notifications-service` to deploy the implementation to the running stack. (This is non-optional — the running containers still have the old stub code until rebuilt; without this beat 9 won't work.)
+- ON-SCREEN CAPTION: "Deploying to local Docker stack..."
+- Wait ~30s for services to become healthy (Spring Boot + Flyway V3 migration runs here).
+- VO: "Tests green. The agent now deploys to the local stack — same commit-to-deploy pattern any modern team uses. In about ten seconds the frontend's health probe will pick it up."
 
 ### 9. UI demo (1 min — the moneymaker)
-- Refresh browser at `http://localhost:3000/orders`. Click any CONFIRMED order.
+- After deploy completes and the frontend's `/shipments/health` poll succeeds (~10s after services healthy), refresh browser at `http://localhost:3000/orders`. Click any CONFIRMED order.
 - "Ship Order" button is now ENABLED (was disabled).
 - Click it.
 - Switch tab to MailHog (`http://localhost:8025`). Email lands in the inbox. Open it. Show subject + body with substituted variables.
