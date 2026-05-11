@@ -72,10 +72,10 @@ export function mockOrderList(page = 0, size = 20): PageResponse<OrderListItem> 
     });
   }
   return {
-    content,
+    items: content,
     page,
-    size,
-    totalElements: total,
+    pageSize: size,
+    total,
     totalPages: Math.ceil(total / size),
   };
 }

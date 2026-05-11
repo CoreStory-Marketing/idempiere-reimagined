@@ -24,10 +24,10 @@ export type DocumentStatus =
   | "REVERSED";
 
 export interface PageResponse<T> {
-  content: T[];
+  items: T[];
   page: number;
-  size: number;
-  totalElements: number;
+  pageSize: number;
+  total: number;
   totalPages: number;
 }
 

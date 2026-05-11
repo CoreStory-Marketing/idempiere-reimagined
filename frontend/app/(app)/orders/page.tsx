@@ -39,7 +39,7 @@ export default function OrdersPage() {
   });
 
   const totalPages = ordersQuery.data?.totalPages ?? 0;
-  const totalElements = ordersQuery.data?.totalElements ?? 0;
+  const totalElements = ordersQuery.data?.total ?? 0;
 
   return (
     <div>
@@ -93,7 +93,7 @@ export default function OrdersPage() {
               Failed to load orders: {(ordersQuery.error as Error).message}
             </div>
           ) : (
-            <OrderTable orders={ordersQuery.data?.content ?? []} />
+            <OrderTable orders={ordersQuery.data?.items ?? []} />
           )}
         </CardContent>
         <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-sm">

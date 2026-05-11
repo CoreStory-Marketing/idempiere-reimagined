@@ -32,7 +32,7 @@ export async function getDashboardCounts(): Promise<DashboardCounts> {
 
   return {
     orderCount:
-      orders.status === "fulfilled" ? orders.value.totalElements : 0,
+      orders.status === "fulfilled" ? orders.value.total : 0,
     productCount:
       products.status === "fulfilled" ? products.value.length : 0,
     receiptCount:
