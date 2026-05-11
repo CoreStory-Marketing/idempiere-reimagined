@@ -7,7 +7,14 @@ const AUTH_COOKIE = "idempiere_jwt";
 const ONE_DAY_SECONDS = 60 * 60 * 24;
 
 function backendBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+  // Server-side env var first (e.g., `http://api-gateway:8080` inside Docker).
+  // Falls back to the browser-side public URL (only useful when running Next.js
+  // outside Docker, where the gateway is reachable as localhost:8080).
+  return (
+    process.env.BACKEND_INTERNAL_URL ||
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    "http://localhost:8080"
+  );
 }
 
 interface LoginRequestBody {

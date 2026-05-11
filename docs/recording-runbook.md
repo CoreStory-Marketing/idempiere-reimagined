@@ -188,6 +188,62 @@ Stop and re-record if:
 - Any 501 error after implementation.
 - Beat 11 VO references a wall-time number that wasn't actually captured. The "weeks-to-hours" framing must cite the **real** elapsed time from this recording, not an estimate.
 
+## Debug & reset (between takes, or for a fresh Claude session debugging mid-recording)
+
+### Known failure modes + fast fixes
+
+| Symptom | Cause | Fast fix |
+|---|---|---|
+| Agent finishes implementation but **no context inventory ledger** rendered (beat 5.5 or beat 7-final missing) | Skill says it's required, but the agent sometimes skips it | Prompt: *"render the context inventory."* |
+| Agent says "tests pass" but **UI still shows disabled Ship Order button** | Agent skipped the deploy step (Phase 5 step 17) — running containers still have stub code | Prompt: *"deploy to the local Docker stack."* Or manually: `docker compose build shipping-service notifications-service && docker compose up -d shipping-service notifications-service` |
+| `mvn verify` fails with **`TypeTag :: UNKNOWN` / Lombok crash** | Maven running on JDK 24 instead of 17 | `export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home` then retry |
+| **`curl ... \| jq -r .token` returns `null`** in your shell | Shell ate the line continuation (`\ ` instead of `\<newline>`) so curl posted no body | Run the curl on a single line, or use `'single quotes'` for the headers |
+| Frontend `/login` shows **"Upstream auth failed: fetch failed"** | `NEXT_PUBLIC_API_BASE_URL=http://localhost:8080` resolves to the container itself from server-side Next.js code | Already fixed via `BACKEND_INTERNAL_URL: http://api-gateway:8080` in `docker-compose.yml`; if you regress this, restore both env vars + rebuild the frontend image |
+| **`POST /orders` returns 500** | Pre-existing JPA auditing `OffsetDateTime` bug | Already fixed via `DateTimeProvider` bean in `JpaAuditingConfig` on all 5 services; if regression, check the bean exists and `@EnableJpaAuditing(dateTimeProviderRef = ...)` references it |
+| **Receipt-related warehouse tests fail** when running `mvn verify` | Mockito default-method stub bug + JmsConfig bean collision | Already fixed; if regression, see `c906280` commit |
+| `docker compose ps` shows a service **stuck in `Restarting`** | Usually Flyway migration error or schema mismatch | `docker logs idempiere-<service>-service --tail 100` and look for the actual exception |
+| **Agent reaches into legacy iDempiere repo** | Skill guardrail failed | Stop the agent. Read `AGENTS.md` + `.claude/skills/brownfield-feature-implementation/SKILL.md` to confirm "refuse to modify legacy" still says so; if intact, prompt the agent to re-read the skill before continuing |
+
+### Full reset between recording takes (~3 min)
+
+```bash
+# 1. Discard the agent's working-tree changes — `--include-untracked` catches the V3 migration the agent generates.
+#    `git stash` is reversible: `git stash pop` recovers the agent's work if you want to inspect.
+git stash --include-untracked
+
+# 2. Stop containers + wipe DB volumes (V99 seed will re-apply cleanly on next `up`).
+docker compose down -v
+
+# 3. Rebuild the services the agent modifies, from the now-clean source.
+#    Skipping this means the next take's containers still have the previous take's agent-generated code baked in.
+docker compose build shipping-service notifications-service
+
+# 4. Bring everything back up.
+docker compose up -d
+
+# 5. Wait ~60s, then verify clean "before" state.
+sleep 60
+TOKEN=$(curl -s -X POST http://localhost:8080/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"admin"}' | jq -r .token)
+
+# Expect: total=2 (the two seeded CONFIRMED orders)
+curl -s -H "Authorization: Bearer $TOKEN" "http://localhost:8080/orders?page=0&size=5" | jq '.total'
+
+# Expect: HTTP 501 (shipping is back to stub)
+curl -s -o /dev/null -w "%{http_code}\n" -X POST \
+  -H "Authorization: Bearer $TOKEN" http://localhost:8080/shipments/1/ship
+
+# Expect: empty inbox
+curl -s 'http://localhost:8025/api/v2/messages?limit=5' | jq '.total'
+```
+
+If all three checks come back `2`, `501`, `0` — you're back to recording-ready state.
+
+### What a fresh Claude session needs to know
+
+If you spawn a new Claude Code session to debug something mid-recording, it'll auto-load the memory pointer to `Project-Status-idempiere-reimagined.md` (in the working dir, outside the repo). That doc has every fix, every decision, current commit SHA, the JDK 17 requirement, and the framing. The fresh session also has full read access to this runbook, `AGENTS.md`, `CLAUDE.md`, and `.claude/skills/brownfield-feature-implementation/SKILL.md`. No additional handoff needed.
+
 ## Post-record
 
 - Trim with QuickTime (File → Edit → Trim).
