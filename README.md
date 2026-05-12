@@ -1,6 +1,6 @@
 # idempiere-reimagined
 
-`idempiere-reimagined` is the order→shipment slice of a notional enterprise logistics platform — ~30K LoC across 5 services demonstrating dual-store gap analysis. The slice is intentionally bounded so the demo runs end-to-end in a tight footprint. The same patterns scale to your full target system at any size.
+`idempiere-reimagined` is the order→shipment slice of a notional enterprise logistics platform — ~30K LoC across 5 services demonstrating dual-store gap analysis. The slice is intentionally bounded so the demo runs end-to-end in a small footprint. The same patterns scale to your full target system at any size.
 
 This is a **clean-room** Spring Boot reimagining of the logistics domain modeled in [iDempiere](https://github.com/idempiere/idempiere). No iDempiere code is reused. Apache 2.0 licensed.
 
